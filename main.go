@@ -1,9 +1,11 @@
 package main
 
 import (
-	"context"
-	"database/sql"
 	"embed"
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/wailsapp/wails/v2"
@@ -11,23 +13,26 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
 
-//go:embed all:frontend/dist
-var assets embed.FS
+const appName = "budgenius"
 
-//go:embed schema.sql
-var schema string
+var (
+	dataDir string // ldflags
+
+	//go:embed all:frontend/dist
+	assets embed.FS
+)
 
 func main() {
-	db, err := sql.Open("sqlite3", "store.db")
-	if err != nil {
-		panic(err)
+	var err error
+	if dataDir == "" {
+		dataDir, err = appDataDir()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error:", err)
+			os.Exit(1)
+		}
 	}
 
-	// Create an instance of the app structure
-	app, err := NewApp(db, schema)
-	if err != nil {
-		println("Error:", err.Error())
-	}
+	app := NewApp()
 
 	// Create application with options
 	err = wails.Run(&options.App{
@@ -39,9 +44,7 @@ func main() {
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup:        app.startup,
-		OnShutdown: func(ctx context.Context) {
-			db.Close()
-		},
+		OnShutdown:       app.shutdown,
 		Bind: []interface{}{
 			app,
 		},
@@ -50,4 +53,37 @@ func main() {
 	if err != nil {
 		println("Error:", err.Error())
 	}
+}
+
+func appDataDir() (string, error) {
+	switch runtime.GOOS {
+	case "linux":
+		base := os.Getenv("XDG_DATA_HOME")
+		if base == "" {
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return "", err
+			}
+			base = filepath.Join(home, ".local", "share")
+		}
+		return filepath.Join(base, appName), nil
+	case "darwin":
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(
+			home,
+			"Library",
+			"Application Support",
+			appName,
+		), nil
+	case "windows":
+		return filepath.Join(
+			os.Getenv("LOCALAPPDATA"),
+			appName,
+		), nil
+	}
+
+	return "", fmt.Errorf("unsupported OS")
 }

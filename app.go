@@ -5,30 +5,65 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
 	"time"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-// App struct
 type App struct {
 	ctx        context.Context
+	db         *sql.DB
 	repository *repository.Repository
 }
 
-// NewApp creates a new App application struct
-func NewApp(db *sql.DB, schema string) (*App, error) {
-	r, err := repository.NewRepository(db, schema)
-	if err != nil {
-		return nil, err
-	}
-	return &App{
-		repository: r,
-	}, nil
+func NewApp() *App {
+	return &App{}
 }
 
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	f, err := os.OpenFile(filepath.Join(dataDir, "app.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		a.FatalErrorDialog(ctx, err)
+	}
+	log.SetOutput(f)
+
+	log.Println("Start application")
+
+	dbPath := filepath.Join(dataDir, "db.sqlite")
+
+	log.Println("Connect to database:", dbPath)
+	a.db, err = sql.Open("sqlite3", dbPath)
+	if err != nil {
+		log.Println("Error connection to database:", err)
+		a.FatalErrorDialog(ctx, err)
+	}
+	a.repository, err = repository.NewRepository(a.db)
+	if err != nil {
+		log.Println("Error creating repository:", err)
+		a.FatalErrorDialog(ctx, err)
+	}
+}
+
+func (a *App) FatalErrorDialog(ctx context.Context, err error) {
+	runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
+		Type:    runtime.ErrorDialog,
+		Title:   "Ошибка",
+		Message: err.Error(),
+	})
+	runtime.Quit(ctx)
+}
+
+func (a *App) shutdown(ctx context.Context) {
+	log.Println("Stop application")
+	a.db.Close()
+	log.Println("Application successfully stopped")
 }
 
 // Greet returns a greeting for the given name

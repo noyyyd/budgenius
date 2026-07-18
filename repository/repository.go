@@ -1,16 +1,21 @@
 package repository
 
 import (
+	_ "embed"
+
 	"context"
 	"database/sql"
 	"time"
 )
 
+//go:embed schema.sql
+var schema string
+
 type Repository struct {
 	db *sql.DB
 }
 
-func NewRepository(db *sql.DB, schema string) (*Repository, error) {
+func NewRepository(db *sql.DB) (*Repository, error) {
 	_, err := db.Exec(schema)
 	if err != nil {
 		return nil, err

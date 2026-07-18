@@ -2,7 +2,24 @@ import './style.css';
 import './app.css';
 
 import logo from './assets/images/logo-universal.png';
-import {Greet} from '../wailsjs/go/main/App';
+import {Greet,Budgets} from '../wailsjs/go/main/App';
+
+async function init() {
+    try {
+        let budgets = await Budgets()
+        renderBudgets(budgets);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function renderBudgets(budgets) {
+    const container = document.getElementById("budgets");
+
+    container.innerHTML = budgets
+        .map(b => `<div>${b.id} — ${b.start} — ${b.end}</div>`)
+        .join("");
+}
 
 document.querySelector('#app').innerHTML = `
     <img id="logo" class="logo">
@@ -10,6 +27,7 @@ document.querySelector('#app').innerHTML = `
       <div class="input-box" id="input">
         <input class="input" id="name" type="text" autocomplete="off" />
         <button class="btn" onclick="greet()">Greet</button>
+        <button class="btn" onclick="budgets()">Budgets</button>
       </div>
     </div>
 `;
@@ -20,7 +38,7 @@ nameElement.focus();
 let resultElement = document.getElementById("result");
 
 // Setup the greet function
-window.greet = function () {
+window.greet = async function () {
     // Get name
     let name = nameElement.value;
 
@@ -29,15 +47,15 @@ window.greet = function () {
 
     // Call App.Greet(name)
     try {
-        Greet(name)
-            .then((result) => {
-                // Update result with data back from App.Greet()
-                resultElement.innerText = result;
-            })
-            .catch((err) => {
-                console.error(err);
-            });
+        // Call App.Greet(name)
+        let result = await Greet(name);
+
+        // Update result with data back from App.Greet()
+        resultElement.innerText = result;
+
     } catch (err) {
         console.error(err);
     }
 };
+
+init();
