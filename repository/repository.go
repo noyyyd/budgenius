@@ -27,7 +27,7 @@ func NewRepository(db *sql.DB) (*Repository, error) {
 
 func (r *Repository) Budgets(ctx context.Context) ([]Budget, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, start, end
+		SELECT id, name, start, end
 		FROM budget
 	`)
 	if err != nil {
@@ -42,7 +42,7 @@ func (r *Repository) Budgets(ctx context.Context) ([]Budget, error) {
 			start int64
 			end   int64
 		)
-		err := rows.Scan(&b.ID, &start, &end)
+		err := rows.Scan(&b.ID, &b.Name, &start, &end)
 		if err != nil {
 			return nil, err
 		}

@@ -1,24 +1,39 @@
 import './style.css';
 import './app.css';
 
+import "@shoelace-style/shoelace/dist/themes/dark.css";
+import "@shoelace-style/shoelace/dist/components/select/select.js";
+import "@shoelace-style/shoelace/dist/components/option/option.js";
+import "@shoelace-style/shoelace/dist/components/icon/icon.js";
+import '@shoelace-style/shoelace/dist/components/button/button.js';
 import logo from './assets/images/logo-universal.png';
 import {Greet,Budgets} from '../wailsjs/go/main/App';
 
 async function init() {
     try {
-        let budgets = await Budgets()
-        renderBudgets(budgets);
+        renderBudgetsSelect();
     } catch (err) {
         console.error(err);
     }
 }
 
-function renderBudgets(budgets) {
-    const container = document.getElementById("budgets");
+async function renderBudgetsSelect() {
+    const select = document.getElementById("budget-select");
 
-    container.innerHTML = budgets
-        .map(b => `<div>${b.id} — ${b.start} — ${b.end}</div>`)
-        .join("");
+    select.addEventListener("sl-change", (event) => {
+        console.log(event.target.value);
+    });
+
+    const budgets = await Budgets();
+
+    budgets.forEach(budget => {
+        const option = document.createElement("sl-option");
+
+        option.value = budget.id;
+        option.textContent = `${budget.name} (${budget.start} - ${budget.end})`;
+
+        select.appendChild(option);
+    });
 }
 
 document.querySelector('#app').innerHTML = `

@@ -73,6 +73,7 @@ func (a *App) Greet(name string) string {
 
 type Budget struct {
 	ID    int64  `json:"id"`
+	Name  string `json:"name"`
 	Start string `json:"start"`
 	End   string `json:"end"`
 }
@@ -87,8 +88,9 @@ func (a *App) Budgets() ([]Budget, error) {
 	for _, budget := range budgets {
 		b = append(b, Budget{
 			ID:    budget.ID,
-			Start: budget.Start.Format(time.DateTime),
-			End:   budget.End.Format(time.DateTime),
+			Name:  budget.Name,
+			Start: budget.Start.Format(time.DateOnly),
+			End:   budget.End.Format(time.DateOnly),
 		})
 	}
 
