@@ -4,7 +4,6 @@ import (
 	"budgenius/repository"
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -23,14 +22,12 @@ func NewApp() *App {
 	return &App{}
 }
 
-// startup is called when the app starts. The context is saved
-// so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
 	f, err := os.OpenFile(filepath.Join(dataDir, "app.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		a.FatalErrorDialog(ctx, err)
+		a.fatalErrorDialog(ctx, err)
 	}
 	log.SetOutput(f)
 
@@ -42,16 +39,16 @@ func (a *App) startup(ctx context.Context) {
 	a.db, err = sql.Open("sqlite3", dbPath)
 	if err != nil {
 		log.Println("Error connection to database:", err)
-		a.FatalErrorDialog(ctx, err)
+		a.fatalErrorDialog(ctx, err)
 	}
 	a.repository, err = repository.NewRepository(a.db)
 	if err != nil {
 		log.Println("Error creating repository:", err)
-		a.FatalErrorDialog(ctx, err)
+		a.fatalErrorDialog(ctx, err)
 	}
 }
 
-func (a *App) FatalErrorDialog(ctx context.Context, err error) {
+func (a *App) fatalErrorDialog(ctx context.Context, err error) {
 	runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
 		Type:    runtime.ErrorDialog,
 		Title:   "Ошибка",
@@ -66,11 +63,6 @@ func (a *App) shutdown(ctx context.Context) {
 	log.Println("Application successfully stopped")
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
-}
-
 type Budget struct {
 	ID    int64  `json:"id"`
 	Name  string `json:"name"`
@@ -78,21 +70,49 @@ type Budget struct {
 	End   string `json:"end"`
 }
 
-func (a *App) Budgets() ([]Budget, error) {
+func (a *App) BudgetList() ([]Budget, error) {
+	log.Println("Request budget list")
+
 	budgets, err := a.repository.Budgets(a.ctx)
 	if err != nil {
+		log.Println("Error getting budgets:", err)
 		return nil, err
 	}
 
-	var b []Budget
-	for _, budget := range budgets {
-		b = append(b, Budget{
+	b := make([]Budget, len(budgets))
+	for i, budget := range budgets {
+		b[i] = Budget{
 			ID:    budget.ID,
 			Name:  budget.Name,
 			Start: budget.Start.Format(time.DateOnly),
 			End:   budget.End.Format(time.DateOnly),
-		})
+		}
 	}
 
+	log.Printf("Successfully got %d budgets\n", len(b))
+
 	return b, nil
+}
+
+func (a *App) CreateBudget(budget Budget) error {
+	start, err := time.Parse(time.DateOnly, budget.Start)
+	if err != nil {
+		log.Println("Error parsing:", err)
+		return err
+	}
+	end, err := time.Parse(time.DateOnly, budget.End)
+	if err != nil {
+		log.Println("Error parsing:", err)
+		return err
+	}
+
+	err = a.repository.CreateBudget(a.ctx, budget.Name, start, end)
+	if err != nil {
+		log.Println("Error creating budget:", err)
+		return err
+	}
+
+	log.Printf("Budget %q with range %s and %s successfully created\n", budget.Name, budget.Start, budget.End)
+
+	return nil
 }

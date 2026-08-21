@@ -9,6 +9,14 @@ const (
 	CategoryTypeExpenses = "expenses"
 )
 
+func (t CategoryType) IsValid() bool {
+	switch t {
+	case CategoryTypeExpenses, CategoryTypeIncome:
+		return true
+	}
+	return false
+}
+
 type Budget struct {
 	ID    int64
 	Name  string
@@ -27,5 +35,5 @@ type Transaction struct {
 	TS       time.Time
 	Amount   int64
 	Comment  string
-	Category string
+	Category Category
 }

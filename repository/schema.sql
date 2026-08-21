@@ -1,14 +1,9 @@
 CREATE TABLE IF NOT EXISTS "category" (
   "id"  INTEGER NOT NULL,
-  "name"  TEXT NOT NULL,
+  "name"  TEXT NOT NULL UNIQUE,
   "type"  TEXT NOT NULL CHECK("type" IN ('income', 'expenses')),
   PRIMARY KEY("id" AUTOINCREMENT)
 );
-
--- INSERT INTO "category" ("name", "type") VALUES
--- ("Ипотека", "expenses"),
--- ("ЖКХ", "expenses"),
--- ("Зарплата", "income");
 
 CREATE TABLE IF NOT EXISTS "budget" (
   "id"  INTEGER NOT NULL,
@@ -18,10 +13,6 @@ CREATE TABLE IF NOT EXISTS "budget" (
   PRIMARY KEY("id")
 );
 
-INSERT INTO "budget" ("name", "start", "end") VALUES 
-("Июль", 1782853200, 1785531600),
-("Август", 1785531600, 1788210000);
-
 CREATE TABLE IF NOT EXISTS "budget_category" (
   "budget_id"  INTEGER NOT NULL,
   "amount"  INTEGER NOT NULL CHECK("amount" > 0),
@@ -30,11 +21,7 @@ CREATE TABLE IF NOT EXISTS "budget_category" (
   FOREIGN KEY("category_id") REFERENCES "category"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
--- INSERT INTO "budget_category" ("budget_id", "amount", "category_id") VALUES
--- (1, 1782853200, 1785531600),
--- ("Август", 1785531600, 1788210000);
-
-CREATE TABLE IF NOT EXISTS "transaction" (
+CREATE TABLE IF NOT EXISTS "money_transaction" (
   "id"  INTEGER NOT NULL,
   "ts"  INTEGER NOT NULL,
   "amount"  INTEGER NOT NULL CHECK("amount" > 0),

@@ -29,6 +29,7 @@ func (r *Repository) Budgets(ctx context.Context) ([]Budget, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, name, start, end
 		FROM budget
+		ORDER BY id DESC
 	`)
 	if err != nil {
 		return nil, err
@@ -53,6 +54,33 @@ func (r *Repository) Budgets(ctx context.Context) ([]Budget, error) {
 	return bugets, rows.Err()
 }
 
+func (r *Repository) CreateBudget(ctx context.Context, name string, start, end time.Time) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO budget (name, start, end)
+		VALUES  (?, ?, ?)`,
+		name, start.Unix(), end.Unix())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Repository) CreateCategory(ctx context.Context, name string, categoryType CategoryType) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO category (name, type)
+		VALUES  (?, ?)`,
+		name, categoryType)
+	return err
+}
+
+func (r *Repository) UpdateCategory(ctx context.Context, id int64, name string, categoryType CategoryType) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE category SET name = ?, type = ?
+		WHERE id = ?`,
+		name, categoryType, id)
+	return err
+}
+
 func (r *Repository) Categories(ctx context.Context) ([]Category, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, name, type
@@ -75,12 +103,33 @@ func (r *Repository) Categories(ctx context.Context) ([]Category, error) {
 	return categories, rows.Err()
 }
 
+func (r *Repository) DeleteCategory(ctx context.Context, id int64) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM category WHERE id = ?`, id)
+	return err
+}
+
+func (r *Repository) CreateTransaction(ctx context.Context, ts time.Time, amount int64, comment string, categoryID int64) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO money_transaction (ts, amount, comment, category_id)
+		VALUES (?, ?, ?, ?)`,
+		ts.Unix(), amount, comment, categoryID)
+	return err
+}
+
+func (r *Repository) UpdateTransaction(ctx context.Context, id int64, ts time.Time, amount int64, comment string, categoryID int64) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE money_transaction SET ts = ?, amount = ?, comment = ?, category_id = ?
+		WHERE id = ?`,
+		ts.Unix(), amount, comment, categoryID, id)
+	return err
+}
+
 func (r *Repository) Transactions(ctx context.Context) ([]Transaction, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, ts, amount, comment, c.name
-		FROM transaction t
+		SELECT t.id, ts, amount, comment, c.id, c.name, c.type
+		FROM money_transaction t
 			JOIN category c ON t.category_id = c.id
-	`)
+	`) // TODO сортировка транзакций
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +141,7 @@ func (r *Repository) Transactions(ctx context.Context) ([]Transaction, error) {
 			t  Transaction
 			ts int64
 		)
-		err := rows.Scan(&t.ID, &ts, &t.Amount, &t.Comment, &t.Category)
+		err := rows.Scan(&t.ID, &ts, &t.Amount, &t.Comment, &t.Category.ID, &t.Category.Name, &t.Category.Type)
 		if err != nil {
 			return nil, err
 		}
@@ -100,4 +149,9 @@ func (r *Repository) Transactions(ctx context.Context) ([]Transaction, error) {
 		transactions = append(transactions, t)
 	}
 	return transactions, rows.Err()
+}
+
+func (r *Repository) DeleteTransaction(ctx context.Context, id int64) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM money_transaction WHERE id = ?`, id)
+	return err
 }

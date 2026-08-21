@@ -6,14 +6,131 @@
     <title>budgenius</title>
 </head>
 <body>
-    <div class="select-row">
-        <sl-select id="budget-select"></sl-select>
-        <sl-button id="create-budget" variant="primary">
-            Создать
-        </sl-button>
+    <div id="app">
+        <sl-split-panel position="55">
+            <div slot="start">
+                <div id="budget">
+                    <div id="select-row" class="row"></div>
+                </div>
+            </div>
+            <div slot="end">    
+                <sl-split-panel vertical position="70">
+                <div slot="start">
+                    <div id="transactions">
+                        <table class="awesome-table">
+                            <caption>Транзакции</caption>
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Категория</th>
+                                    <th>Комментарий</th>
+                                    <th>Сумма</th>
+                                    <th>
+                                        <sl-button id="create-transaction" variant="primary" outline size="medium">
+                                            +
+                                        </sl-button>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div slot="end">
+                    <div id="categories">
+                        <table class="awesome-table">
+                            <caption>Категории</caption>
+                            <thead>
+                                <tr>
+                                    <th>Категория</th>
+                                    <th>Тип</th>
+                                    <th>
+                                        <sl-button id="create-category" variant="primary" outline size="medium">
+                                            +
+                                        </sl-button>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="categories-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+                </sl-split-panel>
+            </div>
+        </sl-split-panel>
     </div>
-<div id="app"></div>
-<div id="budgets"></div>
-<script src="./src/main.js" type="module"></script>
+
+    <!-- Окно создания категории -->
+    <sl-dialog id="create-category-dialog" label="Новая категория">
+        <sl-input name="name" label="Название" autofocus></sl-input>
+        <br>
+        <sl-select name="type" label="Тип">
+            <sl-option value="income">Доходы</sl-option>
+            <sl-option value="expenses">Расходы</sl-option>
+        </sl-select>
+
+        <div name="error"></div>
+
+        <sl-button name="create" slot="footer" variant="primary">
+            Сохранить
+        </sl-button>
+
+        <sl-button name="cancel" slot="footer" variant="default">
+            Отмена
+        </sl-button>
+    </sl-dialog>
+
+    <!-- Окно удаления категории -->
+    <sl-dialog id="remove-category-dialog" label="Удаление категории">
+        <div name="text"></div>
+
+        <div name="error"></div>
+
+        <sl-button name="remove" slot="footer" variant="primary">
+            Удалить
+        </sl-button>
+
+        <sl-button name="cancel" slot="footer" variant="default">
+            Отмена
+        </sl-button>
+    </sl-dialog>
+
+    <!-- Окно создания транзакции -->
+    <sl-dialog id="create-transaction-dialog" label="Новая транзакция">
+        <sl-input name="date" type="date" label="Дата"></sl-input>
+        <br>
+        <sl-input name="amount" type="number" min="0" step="any" placeholder="0,00" label="Сумма"></sl-input>
+        <br>
+        <sl-input name="comment" label="Комментарий"></sl-input>
+        <br>
+        <sl-select name="category" label="Категория"></sl-select>
+
+        <div name="error"></div>
+
+        <sl-button name="create" slot="footer" variant="primary">
+            Сохранить
+        </sl-button>
+
+        <sl-button name="cancel" slot="footer" variant="default">
+            Отмена
+        </sl-button>
+    </sl-dialog>
+
+    <!-- Окно удаления транзакции -->
+    <sl-dialog id="remove-transaction-dialog" label="Удаление транзакции">
+        <div name="text"></div>
+
+        <div name="error"></div>
+
+        <sl-button name="remove" slot="footer" variant="primary">
+            Удалить
+        </sl-button>
+
+        <sl-button name="cancel" slot="footer" variant="default">
+            Отмена
+        </sl-button>
+    </sl-dialog>
+
+    <script src="./src/main.js" type="module"></script>
 </body>
 </html>
